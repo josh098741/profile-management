@@ -1,5 +1,6 @@
 import User from '../models/User.js'
 import jwt from 'jsonwebtoken'
+import cloudinary from '../lib/cloudinary.js'
 
 const generateToken = (res,userId) => {
     const token = jwt.sign({ id:userId }, process.env.JWT_SECRET, {
@@ -104,5 +105,30 @@ export const logout = async (req,res) => {
     }catch(error){
         console.error("Error in logout controller:",error)
         res.status(500).json({ message: "Internal server error in logout" })
+    }
+}
+
+export const updateAvatar = async (req,res) => {
+    try{
+        const { avatar } = req.body
+
+        if(!avatar){
+            return res.status(400).json({ message: "avatar pic is required" })
+        }
+
+        const userId = req.user._id
+
+        const uploadResponse = await cloudinary.uploader.upload(avatar)
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { avatar: uploadResponse.secure_url },
+            { new: true }
+        )
+
+        res.status(200).json(updatedUser)
+    }catch(error){
+        console.error("Error in update profile",error)
+        res.status(500).json({ message: "Internal server error in update avatar" })
     }
 }
