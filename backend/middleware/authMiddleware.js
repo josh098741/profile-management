@@ -11,14 +11,14 @@ export const protectRoute = async (req,res,next) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
         
-        if(!decoded){
+        if(!decoded || !decoded.id){
             return res.status(401).json({ message: "Unauthorized - Invalid token" })
         }
 
-        const user = await User.findByIdAndUpdate(decoded.userId).select("-password")
+        const user = await User.findById(decoded.id).select("-password")
 
         if(!user){
-            return res.status(401).json({ message: "User Not found" })
+            return res.status(404).json({ message: "User Not found" })
         }
 
         req.user = user
@@ -26,6 +26,11 @@ export const protectRoute = async (req,res,next) => {
         next()
     }catch(error){
         console.log("Error in protect route middleware", error)
+
+        if(error.name === "TokenExpiredError"){
+            return res.status(401).json({ message: "Token Expired please Log in again" })
+        }
+
         res.status(500).json({ message: "Internal server Error" })
     }
 }
