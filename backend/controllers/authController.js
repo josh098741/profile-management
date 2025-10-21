@@ -1,8 +1,8 @@
 import User from '../models/User.js'
 import jwt from 'jsonwebtoken'
 
-const generateToken = async (res,userId) => {
-    const token = await jwt.sign({ id:userId }, process.env.JWT_SECRET, {
+const generateToken = (res,userId) => {
+    const token = jwt.sign({ id:userId }, process.env.JWT_SECRET, {
         expiresIn: '7d'
     })
     res.cookie("token",token,{
@@ -41,7 +41,7 @@ export const signup = async (req,res) => {
         generateToken(res, user._id)
 
         res.status(201).json({
-            message: "Singup successful",
+            message: "Signup successful",
             user: {
                 _id: user._id,
                 name: user.name,
@@ -92,4 +92,17 @@ export const login = async (req,res) => {
     }
 }
 
-export const logout = async (req,res) => {}
+export const logout = async (req,res) => {
+    try{
+        res.cookie("token", "", {
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.NODE_ENV === "production",
+            expires: new Date(0)
+        })
+        res.status(200).json({ message: "Logged out successfully" })
+    }catch(error){
+        console.error("Error in logout controller:",error)
+        res.status(500).json({ message: "Internal server error in logout" })
+    }
+}
