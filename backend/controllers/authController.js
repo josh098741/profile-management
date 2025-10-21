@@ -41,10 +41,13 @@ export const signup = async (req,res) => {
         generateToken(res, user._id)
 
         res.status(201).json({
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role
+            message: "Singup successful",
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            } 
         })
         
     }catch(error){
@@ -53,6 +56,40 @@ export const signup = async (req,res) => {
     }
 }
 
-export const login = async (req,res) => {}
+export const login = async (req,res) => {
+    try{
+        const { email,password } = req.body
+
+        if(!email || !password){
+            return res.status(400).json({ message: "All Input fields are required" })
+        }
+
+        const user = await User.findOne({ email })
+
+        if(!user){
+            return res.status(401).json({ message: "Invalid credentials" })
+        }
+
+        const isMatch = await user.comparePassword(password)
+
+        if(!isMatch){
+            return res.status(401).json({ message: "Invalid credentials" })
+        }
+
+        generateToken(res, user._id)
+        res.status(200).json({
+            message: "Logged in successfully",
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        })
+    }catch(error){
+        console.log("Error in Login controller",error)
+        res.status(500).json({ message: "Internal server error in Login" })
+    }
+}
 
 export const logout = async (req,res) => {}
